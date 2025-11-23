@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <title>CG-Mobile-Lite | Нарды</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    </head>
+    <body>
+        <audio
+            id="sound-move"
+            src="assets/sounds/move.wav"
+            preload="auto"
+        ></audio>
+        <audio
+            id="sound-roll"
+            src="assets/sounds/roll.wav"
+            preload="auto"
+        ></audio>
+        <audio
+            id="sound-notify"
+            src="assets/sounds/notify.wav"
+            preload="auto"
+        ></audio>
+        <audio
+            id="sound-error"
+            src="assets/sounds/error.wav"
+            preload="auto"
+        ></audio>
+        <audio
+            id="sound-hit"
+            src="assets/sounds/hit.wav"
+            preload="auto"
+        ></audio>
+
+        <div id="login-scene" class="scene">
+            <h2>CG-Mobile-Lite: Вход</h2>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <input
+                        type="text"
+                        id="username"
+                        required
+                        placeholder="Логин"
+                        autocomplete="username"
+                    />
+                </div>
+                <div class="form-group">
+                    <input
+                        type="password"
+                        id="password"
+                        required
+                        placeholder="Пароль"
+                        autocomplete="current-password"
+                    />
+                </div>
+
+                <div id="message-display" class="message"></div>
+
+                <div class="buttons">
+                    <button type="submit" id="login-btn" class="button-primary">
+                        Войти
+                    </button>
+                    <button
+                        type="button"
+                        id="register-btn"
+                        class="button-secondary"
+                    >
+                        Регистрация
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="lobby-scene" class="scene">
+            <div class="lobby-header">
+                <h2>Лобби</h2>
+                <button id="logout-btn" class="button-secondary">Выйти</button>
+            </div>
+
+            <p>
+                Привет, <strong id="user-greeting"></strong>! (Рейтинг:
+                <span id="user-rating">...</span>)
+            </p>
+            <br />
+            <button
+                id="start-pve-btn"
+                class="button-primary"
+                style="width: 100%"
+            >
+                Играть против Бота
+            </button>
+        </div>
+
+        <div id="game-scene" class="scene">
+            <div id="game-layout">
+                <div id="board-wrapper">
+                    <div id="board-container">
+                        <div id="dice-area"></div>
+
+                        <div id="borne-off-area">
+                            <div class="borne-tray" id="borne-tray-black"></div>
+                            <div class="borne-tray" id="borne-tray-white"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="game-sidebar">
+                    <div id="game-info-area">
+                        <div class="player-info" id="player-black-info">
+                            <span id="player-black-name">Игрок 2 (Черные)</span>
+                        </div>
+
+                        <div id="game-status">Игра начинается...</div>
+
+                        <div class="player-info" id="player-white-info">
+                            <span id="player-white-name">Игрок 1 (Белые)</span>
+                        </div>
+                    </div>
+
+                    <div id="controls-container">
+                        <button
+                            id="roll-dice-btn"
+                            class="button-primary"
+                            disabled
+                        >
+                            Бросить кости
+                        </button>
+
+                        <button
+                            id="finish-turn-btn"
+                            class="button-primary"
+                            disabled
+                        >
+                            Завершить
+                        </button>
+
+                        <button id="undo-btn" class="button-secondary" disabled>
+                            Отменить ход
+                        </button>
+                        <button id="leave-game-btn" class="button-secondary">
+                            Сдаться
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="app.js"></script>
+    </body>
+</html>
