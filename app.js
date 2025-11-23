@@ -48,7 +48,6 @@ const userRating = document.getElementById("user-rating");
 const logoutBtn = document.getElementById("logout-btn");
 const startPveBtn = document.getElementById("start-pve-btn");
 
-// (!!!) ИСПРАВЛЕНО: Четкое определение панелей согласно HTML структуре (Белые внизу)
 const gameHeader = {
     // White - Нижняя панель
     whiteName: document.getElementById("player-white-name"),
@@ -190,7 +189,6 @@ function checkAnimationFailsafe() {
 
 // === Обработчики событий (Логин/Выход) (Без изменений) ===
 async function handleLogin(e) {
-    // ... (Без изменений)
     e.preventDefault();
     const username = usernameInput.value;
     const password = passwordInput.value;
@@ -212,7 +210,6 @@ async function handleLogin(e) {
     }
 }
 async function handleRegister() {
-    // ... (Без изменений)
     const username = usernameInput.value;
     const password = passwordInput.value;
     if (!username || !password) {
@@ -246,7 +243,7 @@ function handleLogout() {
     resetGameState();
 }
 
-// === Логика Лобби (Без изменений) ===
+// === Логика Лобби ===
 function enterLobby(playerData) {
     userGreeting.textContent = playerData.username;
     userRating.textContent = playerData.rating || 0;
@@ -297,14 +294,12 @@ function resetGameState() {
  * Настраивает "слушателей" для сокета (В основном без изменений)
  */
 function setupSocketListeners() {
-    // ... (Все слушатели сокета без изменений, так как логика стековых ходов и обработки ошибок была корректной)
     if (!socket) return;
 
     socket.onAny((eventName, ...args) => {
         console.log(`[DEBUG] ПОЛУЧЕНО СОБЫТИЕ: << ${eventName} >>`, args);
     });
 
-    // (Остальной код setupSocketListeners скопирован из исходного файла без изменений, т.к. он не влиял на баги интерактивности)
     socket.on("connect", () => console.log("Socket.IO: Успешно подключен!"));
     socket.on("disconnect", (reason) =>
         console.log("Socket.IO: Отключен.", reason)
@@ -362,7 +357,6 @@ function setupSocketListeners() {
 
         console.log("[DEBUG] Received full_game_sync", syncState);
 
-        // (!!!) Сброс очередей при принудительной синхронизации
         clientMoveQueue = [];
         isProcessingQueue = false;
 
@@ -410,9 +404,6 @@ function setupSocketListeners() {
     socket.on("bot_dice_roll_result", (data) => {
         const diceData = Array.isArray(data) ? data[0] : data;
         if (diceData && diceData.dice) {
-            // (!!!) ИЗМЕНЕНИЕ (!!!)
-            // Вызываем updateGame, чтобы сохранить кости в currentGameState
-            // и использовать стандартную логику анимации костей.
             const newState = {
                 dice: diceData.dice,
                 can_undo: false,
@@ -517,21 +508,11 @@ function setupSocketListeners() {
     socket.on("on_opponent_step_executed", (data) => {
         const partialState = Array.isArray(data) ? data[0] : data;
         if (partialState && partialState.board_state) {
-            // (!!!) ИЗМЕНЕНИЕ (!!!)
-            // Нормализуем 'remaining_dice', которые присылает сервер,
-            // чтобы 'updateGame' корректно отобразил оставшиеся кости.
             if (partialState.remaining_dice !== undefined) {
-                // --- ПУТЬ А: Сервер прислал 'remaining_dice' (идеально) ---
                 partialState.dice = partialState.remaining_dice;
                 delete partialState.remaining_dice;
             } else if (partialState.dice !== undefined) {
-                // --- ПУТЬ Б: Сервер прислал 'dice' (тоже хорошо) ---
-                // Ничего не делаем, 'partialState.dice' будет использован
             } else {
-                // --- ПУТЬ В: (!!!) НАШ ХАК (!!!) ---
-                // Сервер не прислал *никаких* данных о костях.
-                // Мы знаем, что 1 ход = 1 использованный кубик.
-                // Вручную удаляем один кубик из текущего состояния.
 
                 if (currentGameState.dice && currentGameState.dice.length > 0) {
                     // 1. Копируем текущий массив костей
@@ -557,7 +538,6 @@ function setupSocketListeners() {
             updateGame(partialState, { animate: true });
         }
     });
-    // (!!!) ДОБАВЬТЕ ЭТОТ ОБРАБОТЧИК (!!!)
     socket.on("undo_accepted", (data) => {
         const newGameState = Array.isArray(data) ? data[0] : data;
 
@@ -615,9 +595,8 @@ function setupSocketListeners() {
     });
 }
 
-// === Обработчики Игры (Без изменений) ===
+// === Обработчики Игры ===
 function handleGameOver(winnerSign, reason) {
-    // ... (Без изменений)
     isAnimating = false;
     animationStartTime = 0;
     let message = "";
@@ -640,7 +619,6 @@ function handleGameOver(winnerSign, reason) {
 }
 
 function handleStartPVE() {
-    // ... (Без изменений)
     if (socket && socket.connected) {
         if (currentGameId) {
             console.warn("Попытка начать новую игру, находясь в текущей.");
@@ -661,7 +639,6 @@ function handleStartPVE() {
 }
 
 async function checkAuthOnLoad() {
-    // ... (Без изменений)
     const token = storage.getToken();
     if (!token) {
         showScene("login-scene");
@@ -680,7 +657,7 @@ async function checkAuthOnLoad() {
 // === ЛОГИКА СЦЕНЫ ИГРЫ ===
 
 /**
- * (!!!) ИСПРАВЛЕНО: Корректное назначение панелей
+ * Корректное назначение панелей
  */
 function updateOpponentInfo(opponentData) {
     if (opponentData && opponentData.username) {
@@ -695,7 +672,7 @@ function updateOpponentInfo(opponentData) {
 }
 
 /**
- * (!!!) ИСПРАВЛЕНО: Корректное назначение панелей
+ * Корректное назначение панелей
  */
 function enterGame(gameData) {
     startPveBtn.disabled = false;
@@ -734,8 +711,8 @@ function enterGame(gameData) {
 }
 
 /**
- * (!!!) ИСПРАВЛЕНО: Корректное назначение индикатора хода
- * (!!!) ИСПРАВЛЕНО: Управление кнопками через .disabled
+ * Корректное назначение индикатора хода
+ * Управление кнопками через .disabled
  */
 async function updateGame(
     newGameState,
@@ -793,13 +770,11 @@ async function updateGame(
                     : "Ход оппонента";
         }
 
-        // (!!!) ИСПРАВЛЕНО: Логика подсветки хода
         // Верхняя панель (blackInfo) для Черных (turn === -1)
         gameHeader.blackInfo.classList.toggle("active-turn", turn == -1);
         // Нижняя панель (whiteInfo) для Белых (turn === 1)
         gameHeader.whiteInfo.classList.toggle("active-turn", turn == 1);
 
-        // 4. (!!!) ИСПРАВЛЕНО: Управляем интерактивностью кнопок
         const hasRolled = dice && dice.length > 0;
         const hasMoves = possible_turns && possible_turns.length > 0;
         const hasStartedTurn = hasRolled || can_undo === true;
@@ -807,7 +782,6 @@ async function updateGame(
         const canFinish = myTurn && hasStartedTurn && !hasMoves;
         const canUndo = myTurn && can_undo === true;
 
-        // (!!!) ИСПРАВЛЕНО: Меняем display:none на .disabled для стабильного UI
         rollDiceBtn.disabled = !canRoll;
         finishTurnBtn.disabled = !canFinish;
         undoBtn.disabled = !canUndo;
@@ -847,7 +821,6 @@ async function updateGame(
  * Анимирует движение шашки (Без изменений).
  */
 async function animateMove(move, wasBlot = false, moveSign) {
-    // ... (Без изменений)
     const { from, to } = move;
 
     const fromPointEl = document.getElementById(`point-${from}`);
@@ -889,7 +862,7 @@ async function animateMove(move, wasBlot = false, moveSign) {
 }
 
 /**
- * (!!!) ИСПРАВЛЕНО: Корректное определение лотков вывода
+ * Корректное определение лотков вывода
  */
 function getTargetCoordinates(pointIndex, moveSign) {
     const boardRect = boardContainer.getBoundingClientRect();
@@ -898,7 +871,7 @@ function getTargetCoordinates(pointIndex, moveSign) {
     let targetTray = null;
     const signToUse = moveSign !== undefined ? moveSign : currentGameState.turn;
 
-    // (!!!) ИСПРАВЛЕНО: Назначение лотков согласно HTML и ориентации
+    // Назначение лотков согласно HTML и ориентации
     if (signToUse == 1 && isWhiteBearingOffPoint(pointIndex)) {
         // Белые (1) выводят в НИЖНИЙ лоток (white)
         targetTray = document.getElementById("borne-tray-white");
@@ -972,7 +945,6 @@ function getTargetCoordinates(pointIndex, moveSign) {
  * Анимирует бросок костей (Без изменений).
  */
 async function animateDiceRoll(diceValues) {
-    // ... (Без изменений)
     return new Promise((resolve) => {
         diceArea.innerHTML = "";
         playSound("roll");
@@ -998,7 +970,7 @@ async function animateDiceRoll(diceValues) {
 // === РЕНДЕРИНГ ===
 
 /**
- * (!!!) ИСПРАВЛЕНО: Убрана запутанная логика "переворота" ID.
+ * Убрана запутанная логика "переворота" ID.
  * Теперь ID пунктов соответствуют стандартной нотации (1-24).
  * Визуализация управляется исключительно через CSS.
  */
@@ -1047,7 +1019,6 @@ function initializeBoardPoints() {
  * Рендеринг доски (Плавное сжатие, DOM-diffing)
  */
 function renderBoard(boardState) {
-    // ... (В основном без изменений, кроме обновленной логики плавного сжатия)
     console.log("--- [DEBUG] renderBoard START (Diffing & Animating) ---");
 
     boardContainer
@@ -1143,7 +1114,7 @@ function renderBoard(boardState) {
 }
 
 /**
- * (!!!) ИСПРАВЛЕНО: Корректное назначение лотков вывода
+ * Корректное назначение лотков вывода
  */
 function renderBorneOff(whiteCount, blackCount) {
     // Согласно HTML, whiteTray - Нижний, blackTray - Верхний
@@ -1169,7 +1140,6 @@ function renderBorneOff(whiteCount, blackCount) {
 }
 
 function renderDice(dice) {
-    // ... (Без изменений)
     if (diceArea.querySelector(".rolling")) return;
 
     diceArea.innerHTML = "";
@@ -1184,7 +1154,7 @@ function renderDice(dice) {
 }
 
 /**
- * Очищает подсветку (Без изменений)
+ * Очищает подсветку
  */
 function clearHighlights() {
     document.querySelectorAll(".point").forEach((p) => {
@@ -1235,7 +1205,7 @@ function updateDraggableState() {
 }
 
 /**
- * (!!!) ИСПРАВЛЕНО: Логика подсветки ходов.
+ * Логика подсветки ходов.
  * Теперь ищет "чистые префиксы" - все пункты, куда может дойти выбранная шашка,
  * двигаясь последовательно, даже если остаток хода выполняется другой шашкой.
  */
@@ -1285,7 +1255,7 @@ function renderHighlights() {
             }
         }
 
-        // 2b. (!!!) ИСПРАВЛЕНО: Ищем все ДОСТИЖИМЫЕ точки для ЭТОЙ шашки (Чистые префиксы).
+        // 2b.Ищем все ДОСТИЖИМЫЕ точки для ЭТОЙ шашки (Чистые префиксы).
         const destinations = new Set();
         const fromPoint = parseInt(selectedCheckerPoint);
 
@@ -1319,7 +1289,6 @@ function renderHighlights() {
         destinations.forEach((toPoint) => {
             if (isBearingOffPoint(toPoint, playerSign)) {
                 let targetTray;
-                // (!!!) ИСПРАВЛЕНО: Корректные лотки
                 if (playerSign == 1) {
                     // Белые (1) -> Нижний лоток (white)
                     targetTray = document.getElementById("borne-tray-white");
@@ -1342,7 +1311,7 @@ function renderHighlights() {
 }
 
 /**
- * (!!!) ИСПРАВЛЕНО: Поиск последовательности хода (Чистый префикс).
+ * Поиск последовательности хода (Чистый префикс).
  * Гарантирует, что будет найдена последовательность шагов из fromPoint в toPoint,
  * используя ТОЛЬКО выбранную шашку (строгая последовательность).
  */
@@ -1443,7 +1412,6 @@ function checkAnimationFailsafe() {
             animationStartTime = 0;
             if (socket) socket.emit("request_full_game_sync");
 
-            // (!!!) ИСПРАВЛЕНО:
             // Мы "починили" зависание, поэтому должны
             // вернуть 'false', чтобы позволить
             // текущему клику (например, "Сдаться") выполниться.
@@ -1526,7 +1494,7 @@ function handleTrayDragLeave(e, traySign) {
 }
 
 /**
- * (!!!) ИСПРАВЛЕНО: Обработка дропа на лоток с использованием логики префиксов.
+ * Обработка дропа на лоток с использованием логики префиксов.
  */
 function handleTrayDrop(e, traySign) {
     e.preventDefault();
@@ -1604,7 +1572,7 @@ function executeMove(fromPoint, toPoint) {
 }
 
 /**
- * (!!!) ИСПРАВЛЕНО: Проверка типов данных (используем parseInt).
+ * Проверка типов данных (используем parseInt).
  */
 function onPointClick(pointIndex) {
     console.log(`Клик на точку: ${pointIndex}`);
@@ -1632,8 +1600,6 @@ function onPointClick(pointIndex) {
 
     if (selectedCheckerPoint === null) {
         // 1. ПЕРВЫЙ КЛИК (ВЫБОР "ОТКУДА")
-
-        // (!!!) ИСПРАВЛЕНО: Используем parseInt для надежного сравнения
         const hasMovesFrom = possibleTurns.some(
             (turnArray) =>
                 turnArray.length > 0 &&
@@ -1657,7 +1623,7 @@ function onPointClick(pointIndex) {
         if (!moveExecuted) {
             // Ход не выполнен. Проверяем пере-выбор.
 
-            // (!!!) ИСПРАВЛЕНО: Используем parseInt для надежного сравнения
+            // Используем parseInt для надежного сравнения
             const hasMovesFromNew = possibleTurns.some(
                 (turnArray) =>
                     turnArray.length > 0 &&
@@ -1676,7 +1642,7 @@ function onPointClick(pointIndex) {
 }
 
 /**
- * (!!!) ИСПРАВЛЕНО: Клик на лоток (использует логику handleTrayDrop).
+ * Клик на лоток (использует логику handleTrayDrop).
  */
 function onTrayClick(traySign) {
     if (checkAnimationFailsafe()) {
@@ -1690,7 +1656,7 @@ function onTrayClick(traySign) {
 
     // Клик на лоток имеет смысл, только если шашка уже выбрана
     if (selectedCheckerPoint !== null && traySign == playerSign) {
-        // (!!!) ИСПРАВЛЕНО: Используем ту же логику поиска цели, что и в handleTrayDrop/renderHighlights
+        // Используем ту же логику поиска цели, что и в handleTrayDrop/renderHighlights
         const possibleTurns = currentGameState.possible_turns || [];
         let bearingOffTarget = null;
         const fromPoint = parseInt(selectedCheckerPoint);
@@ -1737,13 +1703,8 @@ function onTrayClick(traySign) {
 }
 
 function handleLeaveGame(force = false) {
-    // (!!!) Ваше решение убрать checkAnimationFailsafe() отсюда
-    // абсолютно верное. Кнопка "Сдаться" должна работать всегда.
 
     if (force) {
-        // --- СЛУЧАЙ 1: ИГРА УЖЕ ЗАВЕРШЕНА (вызов из handleGameOver) ---
-        // Мы уже получили 'game_over' от сервера.
-        // Просто выходим в лобби и всё сбрасываем.
         console.log(
             "[handleLeaveGame] force=true. Игра завершена. Выход в лобби."
         );
@@ -1752,8 +1713,6 @@ function handleLeaveGame(force = false) {
         return;
     }
 
-    // --- СЛУЧАЙ 2: ИГРОК НАЖАЛ "СДАТЬСЯ" (force = false) ---
-    // Мы должны отправить запрос на сдачу, если мы в игре.
     if (socket && socket.connected && currentGameId) {
         if (
             !confirm(
@@ -1767,16 +1726,10 @@ function handleLeaveGame(force = false) {
         console.log("Отправляем: player_give_up");
         socket.emit("player_give_up");
 
-        // Блокируем UI. Мы НЕ выходим в лобби.
-        // Мы ждем, пока сервер пришлет 'game_over', который
-        // затем вызовет handleGameOver -> handleLeaveGame(true).
         isAnimating = true;
         animationStartTime = Date.now();
         gameStatus.textContent = "Сдача...";
     } else {
-        // --- СЛУЧАЙ 3: (Fallback) Нажата "Сдаться", но мы не в игре ---
-        // Что-то пошло не так (нет socket'а или gameId),
-        // просто возвращаемся в лобби.
         console.log(
             "[handleLeaveGame] force=false, но нет игры. Просто выход в лобби."
         );
@@ -1790,7 +1743,6 @@ function handleLeaveGame(force = false) {
 document.getElementById("login-form").addEventListener("submit", handleLogin);
 registerBtn.addEventListener("click", handleRegister);
 
-// (!!!) ИСПРАВЛЕНО: Корректное назначение обработчиков лотков
 // Согласно HTML: whiteTray (Низ) для Белых (1), blackTray (Верх) для Черных (-1)
 const whiteTrayEl = document.getElementById("borne-tray-white");
 const blackTrayEl = document.getElementById("borne-tray-black");
@@ -1816,7 +1768,7 @@ startPveBtn.addEventListener("click", handleStartPVE);
 
 /**
  * Отправляет запрос на бросок костей (для кнопки и авто-броска)
- * (!!!) ИСПРАВЛЕНО: Использует .disabled
+ * Использует .disabled
  */
 function requestDiceRoll() {
     if (checkAnimationFailsafe()) {
@@ -1831,7 +1783,6 @@ function requestDiceRoll() {
         socket.emit("request_player_roll");
 
         if (rollDiceBtn) {
-            // (!!!) ИСПРАВЛЕНО: Защита от двойного клика
             rollDiceBtn.disabled = true;
         }
 
@@ -1844,7 +1795,7 @@ function requestDiceRoll() {
 // Обновляем обработчик кнопки
 rollDiceBtn.addEventListener("click", requestDiceRoll);
 
-// (!!!) ИСПРАВЛЕНО: Использует .disabled
+// Использует .disabled
 finishTurnBtn.addEventListener("click", () => {
     if (checkAnimationFailsafe()) {
         console.warn("Клик заблокирован, идет анимация.");
@@ -1855,14 +1806,14 @@ finishTurnBtn.addEventListener("click", () => {
         console.log("Отправляем: send_turn_finished");
         isAnimating = true;
         animationStartTime = Date.now();
-        // (!!!) ИСПРАВЛЕНО: Защита от двойного клика
+        // Защита от двойного клика
         finishTurnBtn.disabled = true;
         socket.emit("send_turn_finished");
         gameStatus.textContent = "Завершение хода...";
     }
 });
 
-// (!!!) ИСПРАВЛЕНО: Использует .disabled
+// Использует .disabled
 undoBtn.addEventListener("click", () => {
     if (checkAnimationFailsafe()) {
         console.warn("Клик 'Undo' заблокирован, идет анимация.");
@@ -1876,7 +1827,7 @@ undoBtn.addEventListener("click", () => {
         socket.emit("request_undo");
         gameStatus.textContent = "Отмена хода...";
 
-        // (!!!) ИСПРАВЛЕНО: Сразу отключаем кнопку, чтобы избежать двойного клика
+        // Сразу отключаем кнопку, чтобы избежать двойного клика
         undoBtn.disabled = true;
     }
 });
